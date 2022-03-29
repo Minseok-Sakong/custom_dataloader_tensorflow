@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 PATCH_SIZE = 64
 num_classes = 33
 pixels = PATCH_SIZE*PATCH_SIZE*PATCH_SIZE
+channel_nums = 3
 
 def pre_func_example(input):
 	m = np.mean(input)
@@ -46,13 +47,15 @@ class DataSet_random(Sequence):
 		if self.mask_filenames is not None:
 			mask_name_batch = self.mask_filenames[index]
 
-		brain_batch = np.zeros((self.batch_size, PATCH_SIZE, PATCH_SIZE, PATCH_SIZE, 3), dtype='float32')
+		# channel_nums depends on the input image. Ex) RGB image: channel_nums=3, Grayscale image: channel_nums=1
+		brain_batch = np.zeros((self.batch_size, PATCH_SIZE, PATCH_SIZE, PATCH_SIZE, channel_nums), dtype='float32')
 		mask_batch = np.zeros((self.batch_size, PATCH_SIZE, PATCH_SIZE, PATCH_SIZE, num_classes), dtype='float32')
 
+		# load nifti files to numpy arrays
 		image = np.array(nib.load(brain_name_batch).get_fdata())
 		mask = np.array(nib.load(mask_name_batch).get_fdata())
 
-		# standardize image intensity value
+		# standardize/normalize image intensity value
 		if self.pre_func is not None:
 			new_image = self.pre_func(image)
 
@@ -79,7 +82,7 @@ class DataSet_random(Sequence):
 			if (background_percentage > 0.90):
 				continue
 			else:
-				train_brain = np.stack((new_brain,) * 3, axis=-1)
+				train_brain = np.stack((new_brain,) * channel_nums, axis=-1)
 				train_mask = np.expand_dims(new_mask, axis=3)
 				train_mask_cat = to_categorical(train_mask, num_classes=num_classes)
 
